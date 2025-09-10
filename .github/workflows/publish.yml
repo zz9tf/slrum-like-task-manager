@@ -1,4 +1,4 @@
-name: Publish to PyPI (Token)
+name: Publish to PyPI
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
 
 jobs:
   build-publish:
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,13 +23,10 @@ jobs:
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build twine
+          pip install build
       
       - name: Build package
         run: python -m build
       
       - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1

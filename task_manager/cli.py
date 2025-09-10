@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Command Line Interface Module
+命令行接口模块
 """
 
 import sys
@@ -17,14 +17,14 @@ from .config import ConfigManager
 
 
 def main():
-    """Main entry function"""
+    """主入口函数"""
     if len(sys.argv) < 2:
         show_help()
         return
     
     command = sys.argv[1]
     
-    # Global options
+    # 全局选项
     if command in ['-h', '--help']:
         show_help()
         return
@@ -32,10 +32,10 @@ def main():
         show_version()
         return
     
-    # Initialize task manager
+    # 初始化任务管理器
     manager = TaskManager()
     
-    # Command dispatch
+    # 命令分发
     if command == "run":
         cmd_run(manager)
     elif command == "list":
@@ -57,35 +57,35 @@ def main():
     elif command == "config":
         cmd_config(manager)
     else:
-        print(f"❌ Unknown command: {command}")
-        print("Use 'task -h' for help")
+        print(f"❌ 未知命令: {command}")
+        print("使用 'task -h' 查看帮助信息")
         sys.exit(1)
 
 
 def show_help():
-    """Show help information"""
-    print("Task Management System - tmux-based task scheduling and monitoring tool")
+    """显示帮助信息"""
+    print("任务管理系统 - 基于tmux的任务调度和监控工具")
     print("")
-    print("Usage: task <command> [options]")
+    print("用法: task <command> [options]")
     print("")
-    print("Global options:")
-    print("  -h, --help     Show this help message")
-    print("  -v, --version  Show version information")
+    print("全局选项:")
+    print("  -h, --help     显示此帮助信息")
+    print("  -v, --version  显示版本信息")
     print("")
-    print("Available commands:")
-    print("  run      Run new task")
-    print("  list     List tasks")
-    print("  kill     Stop task")
-    print("  monitor  Monitor task output")
-    print("  status   View task status")
-    print("  output   View task output")
-    print("  cleanup  Clean up old tasks")
-    print("  logs     View task logs")
-    print("  email    Email configuration")
-    print("  config   Configuration management")
+    print("可用命令:")
+    print("  run     运行新任务")
+    print("  list    列出任务")
+    print("  kill    停止任务")
+    print("  monitor 监控任务输出")
+    print("  status  查看任务状态")
+    print("  output  查看任务输出")
+    print("  cleanup 清理旧任务")
+    print("  logs    查看任务日志")
+    print("  email   邮件配置")
+    print("  config  配置管理")
     print("")
-    print("Examples:")
-    print("  task run 'Train Model' 'python train.py --epochs 100'")
+    print("示例:")
+    print("  task run '训练模型' 'python train.py --epochs 100'")
     print("  task list")
     print("  task list --resources")
     print("  task monitor <task_id>")
@@ -94,53 +94,24 @@ def show_help():
     print("  task output <task_id>")
     print("  task cleanup")
     print("")
-    print("Detailed help:")
-    print("  task <command> -h     Show detailed help for specific command")
+    print("详细帮助:")
+    print("  task <command> -h    显示特定命令的详细帮助")
 
 
 def show_version():
-    """Show version information"""
-    print("Task Management System v1.0.0")
-    print("tmux-based task scheduling and monitoring tool")
-    print("Author: zheng")
-    print("Build date: 2025-09-09")
+    """显示版本信息"""
+    print("任务管理系统 v1.0.0")
+    print("基于tmux的任务调度和监控工具")
+    print("作者: zheng")
+    print("构建日期: 2025-09-09")
 
 
 def cmd_run(manager: TaskManager):
-    """Run task command"""
-    if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task run <name> <command> [priority] [max_retries]")
-        print("Use 'task run -h' for detailed help")
-        sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("Run new task")
-        print("")
-        print("Usage: task run <name> <command> [priority] [max_retries]")
-        print("")
-        print("Parameters:")
-        print("  name         Task name")
-        print("  command      Command to execute")
-        print("  priority     Task priority (0-10, default 0)")
-        print("  max_retries  Maximum retry count (default 0)")
-        print("")
-        print("Examples:")
-        print("  task run 'Train Model' 'python train.py'")
-        print("  task run 'Important Task' 'python important.py' 10")
-        print("  task run 'May Fail' 'python unstable.py' 0 3")
-        print("")
-        print("Notes:")
-        print("  - Tasks run in tmux sessions")
-        print("  - Higher priority numbers get higher priority")
-        print("  - Tasks will retry automatically on failure")
-        return
-    
+    """运行任务命令"""
     if len(sys.argv) < 4:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task run <name> <command> [priority] [max_retries]")
-        print("Use 'task run -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task run <name> <command> [priority] [max_retries]")
+        print("使用 'task run -h' 查看详细帮助")
         sys.exit(1)
     
     name = sys.argv[2]
@@ -149,46 +120,22 @@ def cmd_run(manager: TaskManager):
     max_retries = int(sys.argv[5]) if len(sys.argv) > 5 else 0
     
     task_id = manager.create_task(name, command, priority, max_retries)
-    print(f"✅ Task created successfully: {task_id} - {name}")
+    print(f"✅ 任务创建成功: {task_id} - {name}")
     
     if manager.start_task(task_id):
-        print(f"🚀 Task started: {task_id}")
-        print(f"📺 View output: task output {task_id}")
-        print(f"🛑 Stop task: task kill {task_id}")
+        print(f"🚀 任务已启动: {task_id}")
+        print(f"📺 查看输出: task output {task_id}")
+        print(f"🛑 停止任务: task kill {task_id}")
     else:
-        print(f"❌ Failed to start task: {task_id}")
+        print(f"❌ 任务启动失败: {task_id}")
 
 
 def cmd_list(manager: TaskManager):
-    """List tasks command"""
-    # Check help option
-    if len(sys.argv) >= 3 and sys.argv[2] in ['-h', '--help']:
-        print("List all tasks")
-        print("")
-        print("Usage: task list [options]")
-        print("")
-        print("Options:")
-        print("  --status <status>  Filter tasks by status")
-        print("  --resources        Show system resource usage")
-        print("  -h, --help         Show this help information")
-        print("")
-        print("Status values:")
-        print("  pending     Pending")
-        print("  running     Running")
-        print("  completed   Completed")
-        print("  failed      Failed")
-        print("  killed      Killed")
-        print("")
-        print("Examples:")
-        print("  task list                    # List all tasks")
-        print("  task list --status running   # Show only running tasks")
-        print("  task list --resources        # Show tasks and resource info")
-        return
-    
+    """列出任务命令"""
     status_filter = None
     show_resources = False
     
-    # Parse arguments
+    # 解析参数
     i = 2
     while i < len(sys.argv):
         arg = sys.argv[i]
@@ -204,11 +151,11 @@ def cmd_list(manager: TaskManager):
     tasks = manager.list_tasks(status_filter)
     
     if not tasks:
-        print("📋 No tasks found")
+        print("📋 没有找到任务")
         return
     
-    print("📋 All tasks:")
-    print("ID        Name                    Status          Priority    Duration         Tmux Session")
+    print("📋 所有任务:")
+    print("ID       名称                   状态           优先级    持续时间         Tmux会话")
     print("=" * 80)
     
     for task in tasks:
@@ -221,7 +168,7 @@ def cmd_list(manager: TaskManager):
         }
         status_icon = status_icons.get(task['status'], '❓')
         
-        # Calculate duration
+        # 计算持续时间
         duration = "N/A"
         if task['start_time']:
             if task['end_time']:
@@ -238,35 +185,11 @@ def cmd_list(manager: TaskManager):
 
 
 def cmd_kill(manager: TaskManager):
-    """Stop task command"""
+    """停止任务命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task kill <task_id> [--force] | task kill --all [--force]")
-        print("Use 'task kill -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task kill <task_id> [--force] | task kill --all [--force]")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("Stop task")
-        print("")
-        print("Usage: task kill <task_id> [--force] | task kill --all [--force]")
-        print("")
-        print("Parameters:")
-        print("  task_id      Task ID to stop")
-        print("  --all        Stop all running tasks")
-        print("  --force      Force stop task")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task kill 00001              # Stop task 00001")
-        print("  task kill 00001 --force      # Force stop task 00001")
-        print("  task kill --all              # Stop all running tasks")
-        print("  task kill --all --force      # Force stop all running tasks")
-        print("")
-        print("Notes:")
-        print("  - Using --force will forcefully terminate tmux session")
-        print("  - Stopped tasks will have status 'killed'")
-        return
     
     task_id = sys.argv[2]
     force = "--force" in sys.argv
@@ -275,56 +198,33 @@ def cmd_kill(manager: TaskManager):
     if all_tasks:
         running_tasks = manager.list_tasks(status_filter="running")
         if not running_tasks:
-            print("📋 No running tasks")
+            print("📋 没有运行中的任务")
             return
         
         for task in running_tasks:
             if manager.stop_task(task['id'], force):
-                print(f"✅ Task stopped: {task['id']}")
+                print(f"✅ 任务已停止: {task['id']}")
             else:
-                print(f"❌ Failed to stop task: {task['id']}")
+                print(f"❌ 停止任务失败: {task['id']}")
     else:
         if manager.stop_task(task_id, force):
-            print(f"✅ Task stopped: {task_id}")
+            print(f"✅ 任务已停止: {task_id}")
         else:
-            print(f"❌ Failed to stop task: {task_id}")
+            print(f"❌ 停止任务失败: {task_id}")
 
 
 def cmd_monitor(manager: TaskManager):
-    """Monitor task command"""
+    """监控任务命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task monitor <task_id> [--lines N] [--refresh SECONDS]")
-        print("Use 'task monitor -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task monitor <task_id> [--lines N] [--refresh SECONDS]")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("Real-time task monitoring")
-        print("")
-        print("Usage: task monitor <task_id> [--lines N] [--refresh SECONDS]")
-        print("")
-        print("Parameters:")
-        print("  task_id      Task ID to monitor")
-        print("  --lines N    Show last N lines of output (default 50)")
-        print("  --refresh S  Refresh interval in seconds (default 2.0)")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task monitor 00001                    # Monitor task 00001")
-        print("  task monitor 00001 --lines 100        # Show last 100 lines")
-        print("  task monitor 00001 --refresh 1.0      # Refresh every second")
-        print("")
-        print("Notes:")
-        print("  - Press Ctrl+C to exit monitoring")
-        print("  - Monitoring shows real-time task output")
-        return
     
     task_id = sys.argv[2]
     lines = 50
     refresh = 2.0
     
-    # Parse arguments
+    # 解析参数
     i = 3
     while i < len(sys.argv):
         arg = sys.argv[i]
@@ -336,102 +236,77 @@ def cmd_monitor(manager: TaskManager):
             i += 1
         i += 1
     
-    print(f"📺 Monitoring task: {task_id}")
-    print("Press Ctrl+C to stop monitoring")
+    if task_id not in manager.tasks:
+        print(f"❌ 任务不存在: {task_id}")
+        return
+    
+    task = manager.tasks[task_id]
+    print(f"📺 监控任务: {task.name} ({task_id})")
+    print(f"📺 Tmux会话: {task.tmux_session}")
     print("=" * 60)
     
     try:
         while True:
+            status = manager.get_task_status(task_id)
+            if not status or status['status'] not in ['running', 'pending']:
+                print(f"\n✅ 任务已结束: {status['status'] if status else 'unknown'}")
+                break
+            
+            # 清屏并显示输出
+            os.system('clear' if os.name == 'posix' else 'cls')
+            print(f"📺 监控任务: {task.name} ({task_id}) - {status['status']}")
+            print(f"⏱️  运行时间: {status.get('start_time', 'N/A')}")
+            print("=" * 60)
+            
             output = manager.get_tmux_output(task_id, lines)
-            print(f"\n[{time.strftime('%H:%M:%S')}] Task {task_id} output:")
-            print("-" * 40)
             print(output)
+            
+            print("=" * 60)
+            print("按 Ctrl+C 退出监控")
+            
             time.sleep(refresh)
+            
     except KeyboardInterrupt:
-        print(f"\n👋 Stopped monitoring task: {task_id}")
+        print(f"\n👋 停止监控任务: {task_id}")
         sys.exit(0)
 
 
 def cmd_status(manager: TaskManager):
-    """View task status command"""
+    """查看任务状态命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task status <task_id>")
-        print("Use 'task status -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task status <task_id>")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("View task status")
-        print("")
-        print("Usage: task status <task_id>")
-        print("")
-        print("Parameters:")
-        print("  task_id      Task ID to view status")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task status 00001    # View status of task 00001")
-        print("")
-        print("Display information:")
-        print("  - Basic task info (ID, name, status)")
-        print("  - Runtime statistics")
-        print("  - Resource usage")
-        print("  - Recent output")
-        return
     
     task_id = sys.argv[2]
     status = manager.get_task_status(task_id)
     
     if not status:
-        print(f"❌ Task not found: {task_id}")
+        print(f"❌ 任务不存在: {task_id}")
         return
     
-    print(f"📊 Task status: {task_id}")
+    print(f"📊 任务状态: {task_id}")
     print("=" * 40)
-    print(f"Name: {status['name']}")
-    print(f"Status: {status['status']}")
-    print(f"Priority: {status['priority']}")
-    print(f"Created: {status['created_time']}")
-    print(f"Started: {status['start_time'] or 'N/A'}")
-    print(f"Ended: {status['end_time'] or 'N/A'}")
-    print(f"Tmux session: {status['tmux_session']}")
+    print(f"名称: {status['name']}")
+    print(f"状态: {status['status']}")
+    print(f"开始时间: {status['start_time'] or 'N/A'}")
+    print(f"结束时间: {status['end_time'] or 'N/A'}")
+    print(f"Tmux会话: {status['tmux_session']}")
     print(f"PID: {status['pid'] or 'N/A'}")
-    print(f"Priority: {status['priority']}")
+    print(f"优先级: {status['priority']}")
 
 
 def cmd_output(manager: TaskManager):
-    """View task output command"""
+    """查看任务输出命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task output <task_id> [--lines N]")
-        print("Use 'task output -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task output <task_id> [--lines N]")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("View task output")
-        print("")
-        print("Usage: task output <task_id> [--lines N]")
-        print("")
-        print("Parameters:")
-        print("  task_id      Task ID to view output")
-        print("  --lines N    Show last N lines of output (default 50)")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task output 00001              # View output of task 00001")
-        print("  task output 00001 --lines 100  # Show last 100 lines")
-        print("")
-        print("Notes:")
-        print("  - Output comes from tmux session")
-        print("  - Only shows recent output content")
-        return
     
     task_id = sys.argv[2]
     lines = 50
     
-    # Parse arguments
+    # 解析参数
     i = 3
     while i < len(sys.argv):
         arg = sys.argv[i]
@@ -440,205 +315,110 @@ def cmd_output(manager: TaskManager):
             i += 1
         i += 1
     
-    print(f"📋 Task output: {task_id}")
+    print(f"📋 任务输出: {task_id}")
     print("=" * 60)
     output = manager.get_tmux_output(task_id, lines)
     print(output)
 
 
 def cmd_cleanup(manager: TaskManager):
-    """Cleanup tasks command"""
-    # Check help option
-    if len(sys.argv) >= 3 and sys.argv[2] in ['-h', '--help']:
-        print("Clean up completed tasks")
-        print("")
-        print("Usage: task cleanup [hours]")
-        print("")
-        print("Parameters:")
-        print("  hours        Clean up tasks completed more than specified hours ago (default 24)")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task cleanup        # Clean up tasks older than 24 hours")
-        print("  task cleanup 12     # Clean up tasks older than 12 hours")
-        print("  task cleanup 0      # Clean up all completed tasks")
-        print("")
-        print("Notes:")
-        print("  - Only cleans up completed, failed, or killed tasks")
-        print("  - Running tasks will not be cleaned up")
-        print("  - Cleanup removes both task records and log files")
-        return
-    
+    """清理任务命令"""
     max_age_hours = 24
     if len(sys.argv) > 2:
         try:
             max_age_hours = int(sys.argv[2])
         except ValueError:
-            print("❌ Error: Invalid time parameter")
-            print("Use 'task cleanup -h' for help")
+            print("❌ 错误: 无效的时间参数")
             sys.exit(1)
     
-    print(f"🧹 Starting cleanup (tasks completed more than {max_age_hours} hours ago)")
+    print(f"🧹 开始清理任务 (已完成任务超过{max_age_hours}小时)")
     manager.cleanup_old_tasks(max_age_hours)
-    print("✅ Cleanup completed")
+    print("✅ 清理完成")
 
 
 def cmd_logs(manager: TaskManager):
-    """View task logs command"""
+    """查看任务日志命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task logs <task_id> [lines]")
-        print("Use 'task logs -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task logs <task_id> [lines]")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("View task logs")
-        print("")
-        print("Usage: task logs <task_id> [lines]")
-        print("")
-        print("Parameters:")
-        print("  task_id      Task ID to view logs")
-        print("  lines        Show last N lines of logs (default 100)")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task logs 00001        # View logs of task 00001")
-        print("  task logs 00001 50     # Show last 50 lines")
-        print("")
-        print("Notes:")
-        print("  - Log files are saved in ~/.task_manager/logs/")
-        print("  - Logs contain complete task output records")
-        return
     
     task_id = sys.argv[2]
     lines = int(sys.argv[3]) if len(sys.argv) > 3 else 100
     
     log_file = manager.logs_dir / f"{task_id}.log"
     if log_file.exists():
-        print(f"📋 Task logs: {task_id}")
+        print(f"📋 任务日志: {task_id}")
         print("=" * 60)
         try:
             with open(log_file, 'r', encoding='utf-8') as f:
                 content = f.read()
-                lines_content = content.split('\n')
-                if len(lines_content) > lines:
-                    lines_content = lines_content[-lines:]
-                print('\n'.join(lines_content))
+                if lines > 0:
+                    content_lines = content.split('\n')
+                    content = '\n'.join(content_lines[-lines:])
+                print(content)
         except Exception as e:
-            print(f"❌ Failed to read logs: {e}")
+            print(f"❌ 读取日志失败: {e}")
     else:
-        print(f"❌ Log file not found: {task_id}")
+        print(f"❌ 日志文件不存在: {task_id}")
 
 
 def cmd_email(manager: TaskManager):
-    """Email configuration command"""
+    """邮件配置命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task email <action>")
-        print("Actions: enable, disable, show, test")
-        print("Use 'task email -h' for detailed help")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task email <action>")
+        print("操作: enable, disable, show, test")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("Email notification management")
-        print("")
-        print("Usage: task email <action>")
-        print("")
-        print("Actions:")
-        print("  enable       Enable email notifications")
-        print("  disable      Disable email notifications")
-        print("  show         Show current email configuration")
-        print("  test         Test email sending")
-        print("  -h, --help   Show this help information")
-        print("")
-        print("Examples:")
-        print("  task email enable    # Enable email notifications")
-        print("  task email disable   # Disable email notifications")
-        print("  task email show      # View current configuration")
-        print("  task email test      # Send test email")
-        print("")
-        print("Notes:")
-        print("  - Email settings need to be configured first")
-        print("  - Use 'task config' command for email configuration")
-        return
     
     action = sys.argv[2]
     email_notifier = manager.email_notifier
     
     if action == "enable":
-        # Here we need to implement the logic to enable email
-        print("✅ Email notifications enabled")
+        # 这里需要实现启用邮件的逻辑
+        print("✅ 邮件通知已启用")
     elif action == "disable":
-        # Here we need to implement the logic to disable email
-        print("✅ Email notifications disabled")
+        # 这里需要实现禁用邮件的逻辑
+        print("✅ 邮件通知已禁用")
     elif action == "show":
-        print("📧 Current email configuration:")
-        print(f"  Recipient email: {email_notifier.config['to_email']}")
-        print(f"  Status: {'Enabled' if email_notifier.config['enabled'] else 'Disabled'}")
+        print("📧 当前邮件配置:")
+        print(f"  接收邮箱: {email_notifier.config['to_email']}")
+        print(f"  状态: {'启用' if email_notifier.config['enabled'] else '禁用'}")
+        print(f"  Token文件: {email_notifier.config['token_file']}")
     elif action == "test":
+        print("📧 发送测试邮件...")
         if email_notifier.test_email():
-            print("✅ Test email sent successfully")
+            print("✅ 测试邮件发送成功")
         else:
-            print("❌ Failed to send test email")
+            print("❌ 测试邮件发送失败")
     else:
-        print(f"❌ Unknown action: {action}")
+        print(f"❌ 未知操作: {action}")
         sys.exit(1)
 
 
 def cmd_config(manager: TaskManager):
-    """Configuration management command"""
+    """配置管理命令"""
     if len(sys.argv) < 3:
-        print("❌ Error: Missing required parameters")
-        print("Usage: task config <action> [file_path]")
+        print("❌ 错误: 缺少必需参数")
+        print("用法: task config <action> [file_path]")
         print("")
-        print("Actions:")
-        print("  init                           Initialize configuration files")
-        print("  email <config_file>            Configure email settings")
-        print("  token <token_file>             Configure Gmail token")
-        print("  google_api file <creds_file>   Configure Google API credentials")
-        print("  google_api login               Login via Google API to get token")
-        print("  show                           Show current configuration")
-        print("  test                           Test email sending")
+        print("操作:")
+        print("  init                          初始化配置文件")
+        print("  email <config_file>           配置邮件设置")
+        print("  token <token_file>            配置Gmail token")
+        print("  google_api file <creds_file>  配置Google API凭据")
+        print("  google_api login              通过Google API登录获取token")
+        print("  show                          显示当前配置")
+        print("  test                          测试邮件发送")
         print("")
-        print("Examples:")
+        print("示例:")
         print("  task config init")
         print("  task config email ~/my_email_config.json")
         print("  task config token ~/my_token.json")
         print("  task config google_api file ~/credentials.json")
         print("  task config google_api login")
         print("  task config show")
-        print("")
-        print("Use 'task config -h' for detailed help")
         sys.exit(1)
-    
-    # Check help option
-    if sys.argv[2] in ['-h', '--help']:
-        print("Configuration management")
-        print("")
-        print("Usage: task config <action> [file_path]")
-        print("")
-        print("Actions:")
-        print("  init                           Initialize configuration files")
-        print("  email <config_file>            Configure email settings")
-        print("  token <token_file>             Configure Gmail token")
-        print("  google_api file <creds_file>   Configure Google API credentials")
-        print("  google_api login               Login via Google API to get token")
-        print("  show                           Show current configuration")
-        print("  test                           Test email sending")
-        print("  -h, --help                     Show this help information")
-        print("")
-        print("Examples:")
-        print("  task config init")
-        print("  task config email ~/my_email_config.json")
-        print("  task config token ~/my_token.json")
-        print("  task config google_api file ~/credentials.json")
-        print("  task config google_api login")
-        print("  task config show")
-        print("")
-        print("Configuration directory: ~/.task_manager/config/")
-        return
     
     action = sys.argv[2]
     config_manager = ConfigManager(manager.data_dir)
@@ -647,41 +427,43 @@ def cmd_config(manager: TaskManager):
         config_manager.init_config()
     elif action == "email":
         if len(sys.argv) < 4:
-            print("❌ Error: Missing config file path")
-            print("Usage: task config email <config_file>")
+            print("❌ 错误: 缺少配置文件路径")
+            print("用法: task config email <config_file>")
             sys.exit(1)
         config_manager.import_email_config(sys.argv[3])
     elif action == "token":
         if len(sys.argv) < 4:
-            print("❌ Error: Missing token file path")
-            print("Usage: task config token <token_file>")
+            print("❌ 错误: 缺少token文件路径")
+            print("用法: task config token <token_file>")
             sys.exit(1)
         config_manager.import_token(sys.argv[3])
     elif action == "google_api":
         if len(sys.argv) < 4:
-            print("❌ Error: Missing google_api subcommand")
-            print("Usage: task config google_api <file|login> [file_path]")
+            print("❌ 错误: 缺少google_api子命令")
+            print("用法: task config google_api <file|login> [file_path]")
             sys.exit(1)
         sub_action = sys.argv[3]
         if sub_action == "file":
             if len(sys.argv) < 5:
-                print("❌ Error: Missing credentials file path")
-                print("Usage: task config google_api file <credentials_file>")
+                print("❌ 错误: 缺少凭据文件路径")
+                print("用法: task config google_api file <credentials_file>")
                 sys.exit(1)
             config_manager.setup_google_api(sys.argv[4])
         elif sub_action == "login":
             config_manager.google_api_login()
         else:
-            print(f"❌ Unknown google_api action: {sub_action}")
-            print("Available actions: file, login")
+            print(f"❌ 未知的google_api操作: {sub_action}")
+            print("可用操作: file, login")
             sys.exit(1)
     elif action == "show":
         config_manager.show_config()
     elif action == "test":
         config_manager.test_config()
     else:
-        print(f"❌ Unknown action: {action}")
+        print(f"❌ 未知操作: {action}")
         sys.exit(1)
+
+
 
 
 if __name__ == "__main__":
