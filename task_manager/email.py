@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-邮件通知模块
+Email notification module
 """
 
 import json
@@ -9,6 +9,7 @@ import base64
 from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 
 # Gmail API imports
 try:
@@ -21,14 +22,36 @@ except ImportError:
 
 
 class EmailNotifier:
-    """邮件通知器"""
+    """Email notifier for sending task-related emails via Gmail API"""
     
     def __init__(self, data_dir: Path):
         self.data_dir = Path(data_dir)
+        # Prepare log file early so that _load_config and other methods can log
+        logs_dir = self.data_dir / "logs"
+        try:
+            logs_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # Silently ignore log directory creation errors; do not block runtime
+            pass
+        self.log_file = logs_dir / "email.log"
         self.config = self._load_config()
+
+    def _write_log(self, message: str) -> None:
+        """Append a timestamped line to the email log file.
+
+        This function should never raise to callers; any IOError is swallowed.
+        """
+        timestamp = datetime.utcnow().isoformat(timespec='seconds') + "Z"
+        line = f"[{timestamp}] {message}\n"
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(line)
+        except Exception:
+            # Do not let logging failures break primary flow
+            pass
     
     def _load_config(self) -> dict:
-        """加载邮件配置"""
+        """Load email configuration"""
         config_file = self.data_dir / "config" / "email_config.json"
         token_file = self.data_dir / "config" / "token.json"
         
@@ -36,15 +59,18 @@ class EmailNotifier:
             try:
                 with open(config_file, 'r', encoding='utf-8') as f:
                     config = json.load(f)
+                    self._write_log("Loaded email_config.json successfully")
                     return {
                         "enabled": config.get("enabled", False),
                         "to_email": config.get("to_email", ""),
                         "token_file": str(token_file)
                     }
             except Exception as e:
-                print(f"⚠️ 加载邮件配置失败: {e}")
+                print(f"⚠️ Failed to load email configuration: {e}")
+                self._write_log(f"WARN Failed to load email configuration: {e}")
         
-        # 默认配置
+        # Default config
+        self._write_log("email_config.json not found; email notifications disabled by default")
         return {
             "enabled": False,
             "to_email": "",
@@ -52,9 +78,10 @@ class EmailNotifier:
         }
     
     def _get_gmail_credentials(self):
-        """获取Gmail API凭据"""
+        """Obtain Gmail API credentials, refreshing token if expired"""
         if not GMAIL_API_AVAILABLE:
-            print("❌ Gmail API库不可用")
+            print("❌ Gmail API libraries are not available")
+            self._write_log("ERROR Gmail API libraries not available")
             return None
         
         SCOPES = ['https://www.googleapis.com/auth/gmail.send']
@@ -62,64 +89,79 @@ class EmailNotifier:
         token_file = self.config.get("token_file")
         
         if not token_file or not Path(token_file).exists():
-            print(f"❌ Token文件不存在: {token_file}")
+            print(f"❌ Token file not found: {token_file}")
+            self._write_log(f"ERROR Token file not found: {token_file}")
             return None
         
         try:
-            # 加载现有token
+            # Load existing token
             creds = Credentials.from_authorized_user_file(token_file, SCOPES)
             
-            # 如果token无效，尝试刷新
+            # If token invalid, attempt refresh
             if not creds or not creds.valid:
                 if creds and creds.expired and creds.refresh_token:
-                    print("🔄 刷新过期token...")
+                    print("🔄 Refreshing expired token...")
+                    self._write_log("INFO Token expired; attempting refresh")
                     creds.refresh(Request())
-                    # 保存刷新后的凭据
+                    # Persist refreshed credentials
                     with open(token_file, 'w') as token:
                         token.write(creds.to_json())
-                    print("✅ Token刷新成功")
+                    print("✅ Token refresh succeeded")
+                    self._write_log("INFO Token refresh succeeded; token persisted")
                 else:
-                    print("❌ 无有效凭据")
+                    print("❌ No valid credentials; please login again")
+                    self._write_log("ERROR No valid credentials; login required (missing/invalid refresh token)")
                     return None
             
+            # Log current credential status
+            try:
+                expiry_str = getattr(creds, 'expiry', None)
+                self._write_log(f"INFO Credentials ready; expiry={expiry_str}")
+            except Exception:
+                pass
+
             return creds
             
         except Exception as e:
-            print(f"❌ 加载Gmail凭据失败: {e}")
+            print(f"❌ Failed to load Gmail credentials: {e}")
+            self._write_log(f"ERROR Failed to load Gmail credentials: {e}")
             return None
     
     def send_email(self, subject: str, body: str, task_id: str = None) -> bool:
-        """发送邮件通知"""
+        """Send an email notification via Gmail API"""
         if not self.config.get("enabled", False):
+            self._write_log("INFO Email send skipped: notifications disabled")
             return False
         
         if not GMAIL_API_AVAILABLE:
-            print("❌ Gmail API库不可用")
+            print("❌ Gmail API libraries are not available")
+            self._write_log("ERROR Email send failed: Gmail API libraries not available")
             return False
         
         try:
-            # 获取Gmail API凭据
+            # Acquire Gmail API credentials
             creds = self._get_gmail_credentials()
             if not creds:
+                self._write_log("ERROR Email send aborted: credentials unavailable")
                 return False
             
-            # 构建Gmail服务
+            # Build Gmail service
             service = build('gmail', 'v1', credentials=creds)
             
-            # 创建邮件消息
+            # Construct MIME message
             message = MIMEMultipart()
             message['to'] = self.config["to_email"]
-            message['subject'] = f"[任务管理器] {subject}"
+            message['subject'] = f"[Task Manager] {subject}"
             
-            # 邮件正文
+            # Email body
             if task_id:
-                task_info = f"任务ID: {task_id}\n"
+                task_info = f"Task ID: {task_id}\n"
             else:
                 task_info = ""
             
             full_body = f"{task_info}\n{body}"
             
-            # 使用HTML格式发送邮件
+            # Send as HTML
             html_body = f"""
             <html>
             <body>
@@ -132,39 +174,42 @@ class EmailNotifier:
             
             message.attach(MIMEText(html_body, 'html', 'utf-8'))
             
-            # 编码消息用于Gmail API
+            # Encode for Gmail API
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
             
-            # 使用Gmail API发送消息
+            self._write_log(f"INFO Sending email to={self.config.get('to_email','')} subject={subject} task_id={task_id}")
+            # Send via Gmail API
             send_message = service.users().messages().send(
                 userId='me',
                 body={'raw': raw_message}
             ).execute()
             
-            print(f"📧 邮件发送成功: {subject}")
-            print(f"📧 消息ID: {send_message['id']}")
+            print(f"📧 Email sent: {subject}")
+            print(f"📧 Message ID: {send_message['id']}")
+            self._write_log(f"INFO Email sent successfully; message_id={send_message.get('id','<unknown>')}")
             return True
             
         except Exception as e:
-            print(f"❌ 邮件发送失败: {e}")
+            print(f"❌ Failed to send email: {e}")
+            self._write_log(f"ERROR Failed to send email: {e}")
             return False
     
     def send_task_completion_email(self, task_id: str, status: str):
-        """发送任务完成邮件"""
+        """Send task completion email for given status"""
         if not self.config.get("enabled", False):
             return
         
         status_messages = {
-            'completed': '任务已完成',
-            'failed': '任务执行失败',
-            'killed': '任务被终止'
+            'completed': 'Task completed',
+            'failed': 'Task failed',
+            'killed': 'Task killed'
         }
         
-        subject = status_messages.get(status, f'任务状态变化: {status}')
-        body = f"任务 {task_id} 状态已变更为: {status}"
+        subject = status_messages.get(status, f'Task status changed: {status}')
+        body = f"Task {task_id} status changed to: {status}"
         
         self.send_email(subject, body, task_id)
     
     def test_email(self) -> bool:
-        """测试邮件发送"""
-        return self.send_email("测试邮件", "这是一封来自任务管理器的测试邮件。", "test")
+        """Send a test email to verify configuration"""
+        return self.send_email("Test Email", "This is a test email from Task Manager.", "test")

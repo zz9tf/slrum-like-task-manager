@@ -287,7 +287,7 @@ class ConfigManager:
         print(f"  {self.data_dir}")
     
     def test_config(self) -> bool:
-        """Test configuration"""
+        """Test configuration by sending a real test email if possible"""
         print("🧪 Testing configuration...")
         
         # Check email config
@@ -317,10 +317,19 @@ class ConfigManager:
             print("✅ Configuration check passed")
             print("📧 Sending test email...")
             
-            # Here we can call email sending test
-            # For simplicity, we assume config is correct
-            print("✅ Email sent successfully! Configuration is correct")
-            return True
+            # Attempt to send a real test email using EmailNotifier
+            try:
+                from .email import EmailNotifier
+                notifier = EmailNotifier(self.data_dir)
+                if notifier.test_email():
+                    print("✅ Email sent successfully! Configuration is correct")
+                    return True
+                else:
+                    print("❌ Failed to send test email. Check token or Gmail API setup")
+                    return False
+            except Exception as e:
+                print(f"❌ Failed to invoke email notifier: {e}")
+                return False
             
         except Exception as e:
             print(f"❌ Configuration test failed: {e}")

@@ -66,7 +66,7 @@ task config init
 
 ```bash
 # Install from PyPI
-pip install lite-slurm
+pip install lite-slrum
 
 # Initialize configuration
 task config init
@@ -397,7 +397,7 @@ chmod +x uninstall.sh
 ./uninstall.sh
 
 # Or manually uninstall
-pip uninstall lite-slurm
+pip uninstall lite-slrum
 rm -rf ~/.task_manager
 ```
 
