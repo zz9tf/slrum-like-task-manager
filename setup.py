@@ -15,7 +15,7 @@ def read_requirements():
         return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="lite-slrum",
+    name="lite-slurm",
     version="1.0.0",
     author="zheng",
     author_email="zheng.zheng.luck@gmail.com",
