@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-资源监控模块
+Resource Monitoring Module
 """
 
 import psutil
@@ -10,19 +10,19 @@ from typing import Dict, Any, Optional
 
 
 class ResourceMonitor:
-    """系统资源监控器"""
+    """System Resource Monitor"""
     
     def __init__(self):
         pass
     
     def get_system_resources(self) -> Dict[str, Any]:
-        """获取系统资源信息"""
+        """Get system resource information"""
         try:
-            # CPU信息
+            # CPU information
             cpu_percent = psutil.cpu_percent(interval=1)
             cpu_count = psutil.cpu_count()
             
-            # 内存信息
+            # Memory information
             memory = psutil.virtual_memory()
             memory_info = {
                 'total': memory.total,
@@ -32,7 +32,7 @@ class ResourceMonitor:
                 'free': memory.free
             }
             
-            # 磁盘信息
+            # Disk information
             disk = psutil.disk_usage('/')
             disk_info = {
                 'total': disk.total,
@@ -41,7 +41,7 @@ class ResourceMonitor:
                 'percent': (disk.used / disk.total) * 100
             }
             
-            # GPU信息
+            # GPU information (if available)
             gpu_info = self._get_gpu_info()
             
             return {
@@ -53,76 +53,96 @@ class ResourceMonitor:
                 'disk': disk_info,
                 'gpu': gpu_info
             }
+            
         except Exception as e:
-            return {'error': f'获取系统资源失败: {e}'}
+            print(f"⚠️ Failed to get system resources: {e}")
+            return {}
     
-    def _get_gpu_info(self) -> Dict[str, Any]:
-        """获取GPU信息"""
+    def _get_gpu_info(self) -> Optional[Dict[str, Any]]:
+        """Get GPU information"""
         try:
-            result = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total,memory.used,utilization.gpu', 
-                                   '--format=csv,noheader,nounits'], 
-                                  capture_output=True, text=True, timeout=10)
+            # Try to get NVIDIA GPU info
+            result = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total,memory.used,utilization.gpu', '--format=csv,noheader,nounits'], 
+                                  capture_output=True, text=True, timeout=5)
             
             if result.returncode == 0:
+                lines = result.stdout.strip().split('\n')
                 gpus = []
-                for line in result.stdout.strip().split('\n'):
+                
+                for line in lines:
                     if line.strip():
-                        parts = [p.strip() for p in line.split(',')]
+                        parts = line.split(', ')
                         if len(parts) >= 4:
                             gpus.append({
                                 'name': parts[0],
-                                'memory_total': int(parts[1]) if parts[1].isdigit() else 0,
-                                'memory_used': int(parts[2]) if parts[2].isdigit() else 0,
-                                'utilization': int(parts[3]) if parts[3].isdigit() else 0
+                                'memory_total': int(parts[1]),
+                                'memory_used': int(parts[2]),
+                                'utilization': int(parts[3])
                             })
                 
                 return {
-                    'status': 'available',
+                    'available': True,
                     'gpus': gpus
                 }
             else:
-                return {
-                    'status': 'unavailable',
-                    'gpus': []
-                }
-        except Exception:
-            return {
-                'status': 'unavailable',
-                'gpus': []
-            }
+                return {'available': False, 'reason': 'nvidia-smi not available'}
+                
+        except subprocess.TimeoutExpired:
+            return {'available': False, 'reason': 'nvidia-smi timeout'}
+        except FileNotFoundError:
+            return {'available': False, 'reason': 'nvidia-smi not found'}
+        except Exception as e:
+            return {'available': False, 'reason': str(e)}
     
     def format_resources(self, resources: Dict[str, Any]) -> str:
-        """格式化资源信息为可读字符串"""
-        if 'error' in resources:
-            return f"❌ {resources['error']}"
+        """Format resource information for display"""
+        if not resources:
+            return "❌ Unable to get resource information"
         
-        lines = []
+        output = []
+        output.append("🖥️  System Resources:")
+        output.append("=" * 50)
         
-        # CPU信息
+        # CPU
         cpu = resources.get('cpu', {})
-        lines.append(f"🖥️  CPU: {cpu.get('percent', 0):.1f}% ({cpu.get('count', 0)} 核心)")
+        output.append(f"CPU: {cpu.get('percent', 0):.1f}% ({cpu.get('count', 0)} cores)")
         
-        # 内存信息
+        # Memory
         memory = resources.get('memory', {})
-        memory_gb = memory.get('total', 0) / (1024**3)
+        memory_total_gb = memory.get('total', 0) / (1024**3)
         memory_used_gb = memory.get('used', 0) / (1024**3)
-        lines.append(f"💾 内存: {memory_used_gb:.1f}GB / {memory_gb:.1f}GB ({memory.get('percent', 0):.1f}%)")
+        memory_percent = memory.get('percent', 0)
+        output.append(f"Memory: {memory_used_gb:.1f}GB / {memory_total_gb:.1f}GB ({memory_percent:.1f}%)")
         
-        # 磁盘信息
+        # Disk
         disk = resources.get('disk', {})
-        disk_gb = disk.get('total', 0) / (1024**3)
+        disk_total_gb = disk.get('total', 0) / (1024**3)
         disk_used_gb = disk.get('used', 0) / (1024**3)
-        lines.append(f"💿 磁盘: {disk_used_gb:.1f}GB / {disk_gb:.1f}GB ({disk.get('percent', 0):.1f}%)")
+        disk_percent = disk.get('percent', 0)
+        output.append(f"Disk: {disk_used_gb:.1f}GB / {disk_total_gb:.1f}GB ({disk_percent:.1f}%)")
         
-        # GPU信息
+        # GPU
         gpu = resources.get('gpu', {})
-        if gpu.get('status') == 'available' and gpu.get('gpus'):
-            for i, gpu_info in enumerate(gpu['gpus']):
-                memory_total = gpu_info.get('memory_total', 0)
+        if gpu.get('available', False):
+            gpus = gpu.get('gpus', [])
+            for i, gpu_info in enumerate(gpus):
+                name = gpu_info.get('name', f'GPU {i}')
                 memory_used = gpu_info.get('memory_used', 0)
+                memory_total = gpu_info.get('memory_total', 0)
                 utilization = gpu_info.get('utilization', 0)
-                lines.append(f"🎮 GPU{i}: {gpu_info.get('name', 'Unknown')} - {memory_used}MB/{memory_total}MB ({utilization}%)")
+                output.append(f"GPU {i}: {name} - {memory_used}MB / {memory_total}MB ({utilization}%)")
         else:
-            lines.append("🎮 GPU: 不可用")
+            output.append(f"GPU: Not available ({gpu.get('reason', 'Unknown')})")
         
-        return "\n".join(lines)
+        return '\n'.join(output)
+    
+    def get_task_resources(self, task_id: str) -> Dict[str, Any]:
+        """Get resource usage for specific task"""
+        try:
+            # This would need to be implemented based on specific requirements
+            # For now, return basic system resources
+            return self.get_system_resources()
+        except Exception as e:
+            print(f"⚠️ Failed to get task resources: {e}")
+            return {}
+

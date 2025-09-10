@@ -19,7 +19,7 @@ setup(
     version="1.0.0",
     author="zheng",
     author_email="zheng.zheng.luck@gmail.com",
-    description="基于tmux的任务调度和监控工具",
+    description="A tmux-based task scheduling and monitoring tool",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     url="https://github.com/your-username/task-manager",
