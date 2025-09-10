@@ -1,32 +1,32 @@
-# 任务管理系统
+# Task Management System
 
-基于tmux的任务调度和监控工具，支持并发执行、实时监控、邮件通知等功能。
+A tmux-based task scheduling and monitoring tool with support for concurrent execution, real-time monitoring, email notifications, and more.
 
-## 功能特性
+## Features
 
-- 🚀 **并发执行**: 支持多个任务同时运行
-- 📊 **实时监控**: 实时查看任务状态和输出
-- 🛠️ **资源监控**: CPU、内存、磁盘使用率监控
-- 📝 **日志管理**: 自动记录任务输出和日志
-- 🔧 **配置管理**: 简单的配置文件管理
-- 📧 **邮件通知**: 任务完成时自动发送邮件（需要配置）
+- 🚀 **Concurrent Execution**: Support for multiple tasks running simultaneously
+- 📊 **Real-time Monitoring**: Real-time task status and output viewing
+- 🛠️ **Resource Monitoring**: CPU, memory, and disk usage monitoring
+- 📝 **Log Management**: Automatic task output and log recording
+- 🔧 **Configuration Management**: Simple configuration file management
+- 📧 **Email Notifications**: Automatic email notifications when tasks complete (requires configuration)
 
-## 安装
+## Installation
 
-### 系统要求
+### System Requirements
 
 - Python 3.7+
-- tmux (必需)
+- tmux (required)
 
-### 检查tmux
+### Check tmux
 
-在安装前，请确保系统已安装tmux：
+Before installation, ensure tmux is installed on your system:
 
 ```bash
-# 检查tmux是否已安装
-tmux --version
+# Check if tmux is installed
+command -v tmux
 
-# 如果没有安装，请先安装tmux
+# If not installed, install tmux first
 # Ubuntu/Debian:
 sudo apt-get install tmux
 
@@ -37,97 +37,100 @@ sudo yum install tmux
 brew install tmux
 ```
 
-### 快速安装
+### Quick Installation
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone <repository-url>
 cd task_manager
 
-# 运行安装脚本
+# Run installation script
 chmod +x install.sh
 ./install.sh
 ```
 
-### 手动安装
+### Manual Installation
 
 ```bash
-# 安装Python包
-pip install .
+# Install Python dependencies
+pip install -r requirements.txt
 
-# 初始化配置
+# Install package
+pip install -e .
+
+# Initialize configuration
 task config init
 ```
 
-## 使用方法
-
-### 基本命令
+### Install from PyPI
 
 ```bash
-# 运行新任务
-task run <name> <command> [priority] [max_retries]
+# Install from PyPI
+pip install lite-slrum
 
-# 查看任务列表
-task list
-
-# 停止任务
-task kill <task_id>
-
-# 实时监控
-task monitor
-
-# 查看任务状态
-task status <task_id>
-
-# 查看任务输出
-task output <task_id>
-
-# 清理已完成任务
-task cleanup [days]
-
-# 查看任务日志
-task logs <task_id>
-
-# 配置管理
-task config <action>
+# Initialize configuration
+task config init
 ```
 
-### 示例
+## Usage
+
+### Basic Commands
 
 ```bash
-# 运行一个简单任务
-task run "测试任务" "echo 'Hello World' && sleep 5"
+# Run new task
+task run "Task Name" "command to execute"
 
-# 运行高优先级任务
-task run "重要任务" "python train.py" 10
-
-# 查看所有任务
+# List all tasks
 task list
 
-# 停止特定任务
-task kill 00001
+# Monitor task output in real-time
+task monitor <task_id>
 
-# 停止所有运行中的任务
+# Stop task
+task kill <task_id>
+
+# View task status
+task status <task_id>
+
+# View task output
+task output <task_id>
+
+# Clean up old tasks
+task cleanup
+
+# View help
+task -h
+```
+
+### Examples
+
+```bash
+# Run a training task
+task run "Model Training" "python train.py --epochs 100"
+
+# Run multiple tasks concurrently
+task run "Data Processing" "python process_data.py" &
+task run "Feature Extraction" "python extract_features.py" &
+
+# Monitor running tasks
+task list --resources
+
+# Monitor specific task
+task monitor 00001
+
+# Stop all running tasks
 task kill --all
 ```
 
-## 邮件通知配置
+## Configuration
 
-**注意**: 任务管理系统在安装后可以立即使用所有功能，但邮件通知需要额外配置。如果不配置邮件，系统仍可正常监控和管理任务，只是不会发送邮件通知。
+### Email Notifications
 
-### 配置邮件功能需要三个文件
+To enable email notifications, you need to configure three files:
 
-要启用邮件通知功能，需要配置以下三个文件：
+#### 1. Email Configuration File
 
-1. **email_config.json** - 邮件配置文件
-2. **credentials.json** - Google API凭据文件  
-3. **token.json** - Gmail访问令牌文件
-
-### 方法一：完整配置流程（推荐）
-
-#### 第一步：配置邮件设置
-
-创建 `email_config.json` 文件：
+Create `~/.task_manager/config/email_config.json`:
 
 ```json
 {
@@ -136,237 +139,304 @@ task kill --all
 }
 ```
 
-**配置说明**:
-- `enabled`: 是否启用邮件通知 (true/false)
-- `to_email`: 接收通知的邮箱地址
+#### 2. Google API Credentials
 
-**命令**:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Gmail API
+4. Create OAuth 2.0 credentials
+5. Download credentials file as `credentials.json`
+6. Place it in `~/.task_manager/config/credentials.json`
+
+#### 3. Gmail Token
+
+Use the following command to get the token:
+
 ```bash
-# 创建邮件配置文件
-echo '{"enabled": true, "to_email": "your-email@example.com"}' > email_config.json
-
-# 导入邮件配置
-task config email email_config.json
-```
-
-#### 第二步：获取Google API凭据
-
-1. **访问Google Cloud Console**
-   - 打开 [Google Cloud Console](https://console.cloud.google.com/)
-
-2. **创建或选择项目**
-   - 创建新项目或选择现有项目
-
-3. **启用Gmail API**
-   - 在"API和服务" > "库"中搜索"Gmail API"
-   - 点击"启用"
-
-4. **创建OAuth 2.0凭据**
-   - 在"API和服务" > "凭据"中点击"创建凭据"
-   - 选择"OAuth 2.0客户端ID"
-   - 应用类型选择"桌面应用程序"
-   - 下载凭据文件（通常命名为 `credentials.json`）
-
-**命令**:
-```bash
-# 导入Google API凭据
-task config google_api file /path/to/your/credentials.json
-```
-
-#### 第三步：获取访问令牌
-
-通过OAuth登录获取token文件：
-
-**命令**:
-```bash
-# 通过浏览器登录获取token
+# Login via Google API to get token
 task config google_api login
 ```
 
-#### 第四步：测试邮件功能
+#### Quick Import Method
 
-验证邮件配置是否成功：
+If you already have the configuration files:
 
-**命令**:
 ```bash
-# 测试邮件发送
-task config test
+# Import email configuration
+task config email ~/my_email_config.json
+
+# Import Gmail token
+task config token ~/my_token.json
+
+# Import Google API credentials
+task config google_api file ~/credentials.json
 ```
 
-#### 可选：配置不同机器的token文件
-
-如果需要在不同机器上使用，可以复制token文件：
-
-**命令**:
-```bash
-# 导入已有的token文件
-task config token /path/to/your/token.json
-```
-
-### 方法二：使用现有文件（快速配置）
-
-如果你已经有 `email_config.json`、`credentials.json` 和 `token.json` 文件：
+### Configuration Management
 
 ```bash
-# 1. 初始化配置
+# Initialize configuration files
 task config init
 
-# 2. 导入邮件配置
-task config email /path/to/your/email_config.json
+# Show current configuration
+task config show
 
-# 3. 导入Google API凭据
-task config google_api file /path/to/your/credentials.json
-
-# 4. 导入Gmail token
-task config token /path/to/your/token.json
-
-# 5. 测试邮件发送
+# Test email configuration
 task config test
-```
 
-### 配置管理命令
-
-```bash
-# 初始化配置
-task config init
-
-# 邮件配置
+# Import email configuration
 task config email <config_file>
 
-# Google API凭据
-task config google_api file <credentials_file>
-task config google_api login
-
-# Gmail token
+# Import Gmail token
 task config token <token_file>
 
-# 查看和测试
+# Setup Google API credentials
+task config google_api file <credentials_file>
+
+# Login via Google API
+task config google_api login
+```
+
+## Command Reference
+
+### Global Options
+
+- `-h, --help`: Show help information
+- `-v, --version`: Show version information
+
+### Commands
+
+#### `task run <name> <command> [priority] [max_retries]`
+
+Run new task.
+
+**Parameters:**
+- `name`: Task name
+- `command`: Command to execute
+- `priority`: Task priority (0-10, default 0)
+- `max_retries`: Maximum retry count (default 0)
+
+**Examples:**
+```bash
+task run "Train Model" "python train.py"
+task run "Important Task" "python important.py" 10
+task run "May Fail" "python unstable.py" 0 3
+```
+
+#### `task list [options]`
+
+List all tasks.
+
+**Options:**
+- `--status <status>`: Filter tasks by status
+- `--resources`: Show system resource usage
+
+**Examples:**
+```bash
+task list                    # List all tasks
+task list --status running   # Show only running tasks
+task list --resources        # Show tasks and resource info
+```
+
+#### `task kill <task_id> [--force] | task kill --all [--force]`
+
+Stop task.
+
+**Parameters:**
+- `task_id`: Task ID to stop
+- `--all`: Stop all running tasks
+- `--force`: Force stop task
+
+**Examples:**
+```bash
+task kill 00001              # Stop task 00001
+task kill 00001 --force      # Force stop task 00001
+task kill --all              # Stop all running tasks
+```
+
+#### `task monitor <task_id> [--lines N] [--refresh SECONDS]`
+
+Real-time task monitoring.
+
+**Parameters:**
+- `task_id`: Task ID to monitor
+- `--lines N`: Show last N lines of output (default 50)
+- `--refresh S`: Refresh interval in seconds (default 2.0)
+
+**Examples:**
+```bash
+task monitor 00001                    # Monitor task 00001
+task monitor 00001 --lines 100        # Show last 100 lines
+task monitor 00001 --refresh 1.0      # Refresh every second
+```
+
+#### `task status <task_id>`
+
+View task status.
+
+**Parameters:**
+- `task_id`: Task ID to view status
+
+**Examples:**
+```bash
+task status 00001    # View status of task 00001
+```
+
+#### `task output <task_id> [--lines N]`
+
+View task output.
+
+**Parameters:**
+- `task_id`: Task ID to view output
+- `--lines N`: Show last N lines of output (default 50)
+
+**Examples:**
+```bash
+task output 00001              # View output of task 00001
+task output 00001 --lines 100  # Show last 100 lines
+```
+
+#### `task cleanup [hours]`
+
+Clean up completed tasks.
+
+**Parameters:**
+- `hours`: Clean up tasks completed more than specified hours ago (default 24)
+
+**Examples:**
+```bash
+task cleanup        # Clean up tasks older than 24 hours
+task cleanup 12     # Clean up tasks older than 12 hours
+task cleanup 0      # Clean up all completed tasks
+```
+
+#### `task logs <task_id> [lines]`
+
+View task logs.
+
+**Parameters:**
+- `task_id`: Task ID to view logs
+- `lines`: Show last N lines of logs (default 100)
+
+**Examples:**
+```bash
+task logs 00001        # View logs of task 00001
+task logs 00001 50     # Show last 50 lines
+```
+
+#### `task email <action>`
+
+Email notification management.
+
+**Actions:**
+- `enable`: Enable email notifications
+- `disable`: Disable email notifications
+- `show`: Show current email configuration
+- `test`: Test email sending
+
+**Examples:**
+```bash
+task email enable    # Enable email notifications
+task email disable   # Disable email notifications
+task email show      # View current configuration
+task email test      # Send test email
+```
+
+#### `task config <action> [file_path]`
+
+Configuration management.
+
+**Actions:**
+- `init`: Initialize configuration files
+- `email <config_file>`: Configure email settings
+- `token <token_file>`: Configure Gmail token
+- `google_api file <creds_file>`: Configure Google API credentials
+- `google_api login`: Login via Google API to get token
+- `show`: Show current configuration
+- `test`: Test email sending
+
+**Examples:**
+```bash
+task config init
+task config email ~/my_email_config.json
+task config token ~/my_token.json
+task config google_api file ~/credentials.json
+task config google_api login
 task config show
-task config test
 ```
 
-### 配置文件格式
+## Task Status
 
-**Gmail Token文件** (`token.json`):
-```json
-{
-    "token": "your-token",
-    "refresh_token": "your-fresh-token",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "client_id": "your-client-id",
-    "client_secret": "your-client-secret",
-    "scopes": ["https://www.googleapis.com/auth/gmail.send"],
-    "universe_domain": "googleapis.com",
-    "account": "",
-    "expiry": "your-expiry-date"
-}
-```
+Tasks can have the following statuses:
 
-**Google API凭据文件** (`credentials.json`):
-```json
-{
-    "installed": {
-        "client_id": "your-client-id.apps.googleusercontent.com",
-        "project_id": "your-project-id",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_secret": "your-client-secret",
-        "redirect_uris": ["http://localhost"]
-    }
-}
-```
+- `pending`: Waiting to start
+- `running`: Currently running
+- `completed`: Successfully completed
+- `failed`: Failed to complete
+- `killed`: Manually stopped
 
-### 日志管理
-
-```bash
-# 查看任务日志
-task logs <task_id>
-
-# 查看所有日志文件
-ls ~/.task_manager/logs/
-```
-
-### 高级功能
-
-#### 任务优先级
-
-```bash
-# 运行高优先级任务（数字越大优先级越高）
-task run "重要任务" "python train.py" 10
-
-# 运行低优先级任务
-task run "后台任务" "python data_process.py" 1
-```
-
-#### 任务重试
-
-```bash
-# 设置最大重试次数
-task run "可能失败的任务" "python unstable_script.py" 0 3
-```
-
-#### 资源监控
-
-```bash
-# 实时监控所有任务
-task monitor
-
-# 查看特定任务状态
-task status 00001
-```
-
-## 项目结构
-
-```
-task_manager/
-├── task_manager/           # 核心模块
-│   ├── __init__.py
-│   ├── cli.py             # 命令行接口
-│   ├── core.py            # 核心任务管理
-│   ├── email.py           # 邮件通知
-│   ├── config.py          # 配置管理
-│   └── monitor.py         # 监控功能
-├── setup.py               # 包配置
-├── requirements.txt       # 依赖列表
-├── install.sh            # 安装脚本
-└── README.md             # 项目文档
-```
-
-## 配置目录
+## File Structure
 
 ```
 ~/.task_manager/
 ├── config/
-│   ├── email_config.json              # 邮件配置
-│   ├── credentials.json               # Google API凭据
-│   └── token.json                     # Gmail token
-├── tasks.json                         # 任务数据
-└── logs/                              # 任务日志
+│   ├── email_config.json    # Email configuration
+│   ├── credentials.json     # Google API credentials
+│   └── token.json          # Gmail token
+├── logs/                   # Task log files
+│   ├── 00001.log
+│   └── 00002.log
+└── tasks.json              # Task database
 ```
 
-## 依赖
+## Uninstallation
 
-- Python 3.7+
-- tmux
-- psutil
-- google-auth
-- google-auth-oauthlib
-- google-api-python-client
+```bash
+# Run uninstall script
+chmod +x uninstall.sh
+./uninstall.sh
 
-## 许可证
+# Or manually uninstall
+pip uninstall lite-slrum
+rm -rf ~/.task_manager
+```
 
-MIT License
+## Troubleshooting
 
-## 贡献
+### Common Issues
 
-欢迎提交Issue和Pull Request！
+1. **tmux not found**: Install tmux using your package manager
+2. **Permission denied**: Make sure you have execute permissions for scripts
+3. **Email not working**: Check Gmail API configuration and token validity
+4. **Task not starting**: Check if tmux session name conflicts exist
 
-## 更新日志
+### Log Files
 
-### v1.0.0
-- 初始版本发布
-- 支持基本任务管理功能
-- 支持邮件通知
-- 支持Google API OAuth
-- 支持配置管理
+- Task logs: `~/.task_manager/logs/<task_id>.log`
+- System logs: Check terminal output for error messages
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Author
+
+Created by zheng
+
+## Changelog
+
+### v1.0.0 (2025-09-10)
+- Initial release
+- Basic task management functionality
+- tmux integration
+- Email notifications
+- Resource monitoring
+- Configuration management

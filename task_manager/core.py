@@ -78,7 +78,7 @@ class TaskManager:
                 tasks = {}
                 for task_id, task_data in data.items():
                     # Convert datetime strings back to datetime objects
-                    for time_field in ['created_time', 'start_time', 'end_time']:
+                    for time_field in ['created_time', 'start_time', 'end_time', 'pid']:
                         if task_data.get(time_field):
                             task_data[time_field] = datetime.fromisoformat(task_data[time_field])
                     tasks[task_id] = Task(**task_data)
@@ -94,7 +94,7 @@ class TaskManager:
             for task_id, task in self.tasks.items():
                 task_dict = asdict(task)
                 # Convert datetime objects to strings
-                for time_field in ['created_time', 'start_time', 'end_time']:
+                for time_field in ['created_time', 'start_time', 'end_time', 'pid']:
                     if task_dict.get(time_field):
                         task_dict[time_field] = task_dict[time_field].isoformat()
                 data[task_id] = task_dict
