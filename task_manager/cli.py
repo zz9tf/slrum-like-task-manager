@@ -59,7 +59,7 @@ def main():
 
 
 def show_help():
-    """show help information"""
+    """Show help information"""
     print("Task Manager - A task scheduler and monitor based on tmux")
     print("")
     print("Usage: task <command> [options]")
@@ -95,15 +95,25 @@ def show_help():
 
 
 def show_version():
-    """show version information"""
-    print("Task Manager v1.0.0")
+    """Show version information"""
+    print("Task Manager v1.0.1")
     print("A task scheduler and monitor based on tmux")
     print("Author: zheng")
     print("Build date: 2025-09-09")
 
 
 def cmd_run(manager: TaskManager):
-    """run task command"""
+    """
+    Run task command
+    
+    Args:
+        manager: TaskManager instance
+    """
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_run_help()
+        return
+    
     if len(sys.argv) < 4:
         print("❌ error: missing required parameters")
         print("Usage: task run <name> <command> [priority] [max_retries]")
@@ -127,8 +137,46 @@ def cmd_run(manager: TaskManager):
         print(f"❌ task start failed: {task_id}")
 
 
+def show_run_help():
+    """
+    Show detailed help information for run command
+    """
+    print("Task Manager - Run Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task run <name> <command> [priority] [max_retries]")
+    print("")
+    print("Parameters:")
+    print("  name         Task name (required) - Unique identifier for the task")
+    print("  command      Command to execute (required) - Full command line instruction")
+    print("  priority     Task priority (optional) - Numeric value, default is 0")
+    print("  max_retries  Maximum retry attempts (optional) - Numeric value, default is 0")
+    print("")
+    print("Examples:")
+    print("  task run 'train model' 'python train.py --epochs 100'")
+    print("  task run 'data processing' 'python process_data.py' 5")
+    print("  task run 'backup' 'tar -czf backup.tar.gz /home/user' 0 3")
+    print("")
+    print("Notes:")
+    print("  - Task name should be concise and descriptive")
+    print("  - Command can be any valid shell command")
+    print("  - Higher priority numbers have higher priority")
+    print("  - Tasks run in tmux sessions for background execution")
+    print("")
+    print("Related commands:")
+    print("  task list     - List all tasks")
+    print("  task monitor  - Monitor task output")
+    print("  task kill     - Stop task")
+    print("  task status   - View task status")
+
+
 def cmd_list(manager: TaskManager):
-    """list task command"""
+    """List task command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_list_help()
+        return
+    
     status_filter = None
     show_resources = False
     
@@ -183,10 +231,16 @@ def cmd_list(manager: TaskManager):
 
 
 def cmd_kill(manager: TaskManager):
-    """stop task command"""
+    """Stop task command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_kill_help()
+        return
+    
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
         print("Usage: task kill <task_id> [--force] | task kill --all [--force]")
+        print("Use 'task kill -h' to see detailed help")
         sys.exit(1)
     
     task_id = sys.argv[2]
@@ -212,10 +266,16 @@ def cmd_kill(manager: TaskManager):
 
 
 def cmd_monitor(manager: TaskManager):
-    """monitor task command"""
+    """Monitor task command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_monitor_help()
+        return
+    
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
         print("Usage: task monitor <task_id> [--lines N] [--refresh SECONDS]")
+        print("Use 'task monitor -h' to see detailed help")
         sys.exit(1)
     
     task_id = sys.argv[2]
@@ -270,10 +330,16 @@ def cmd_monitor(manager: TaskManager):
 
 
 def cmd_status(manager: TaskManager):
-    """view task status command"""
+    """View task status command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_status_help()
+        return
+    
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
         print("Usage: task status <task_id>")
+        print("Use 'task status -h' to see detailed help")
         sys.exit(1)
     
     task_id = sys.argv[2]
@@ -295,10 +361,16 @@ def cmd_status(manager: TaskManager):
 
 
 def cmd_output(manager: TaskManager):
-    """view task output command"""
+    """View task output command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_output_help()
+        return
+    
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
         print("Usage: task output <task_id> [--lines N]")
+        print("Use 'task output -h' to see detailed help")
         sys.exit(1)
     
     task_id = sys.argv[2]
@@ -320,13 +392,19 @@ def cmd_output(manager: TaskManager):
 
 
 def cmd_cleanup(manager: TaskManager):
-    """cleanup task command"""
+    """Cleanup task command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_cleanup_help()
+        return
+    
     max_age_hours = 24
     if len(sys.argv) > 2:
         try:
             max_age_hours = int(sys.argv[2])
         except ValueError:
             print("❌ error: invalid time parameter")
+            print("Use 'task cleanup -h' to see detailed help")
             sys.exit(1)
     
     print(f"🧹 start cleanup task (tasks older than {max_age_hours} hours)")
@@ -335,10 +413,16 @@ def cmd_cleanup(manager: TaskManager):
 
 
 def cmd_logs(manager: TaskManager):
-    """view task logs command"""
+    """View task logs command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_logs_help()
+        return
+    
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
         print("Usage: task logs <task_id> [lines]")
+        print("Use 'task logs -h' to see detailed help")
         sys.exit(1)
     
     task_id = sys.argv[2]
@@ -362,11 +446,17 @@ def cmd_logs(manager: TaskManager):
 
 
 def cmd_email(manager: TaskManager):
-    """email configuration command"""
+    """Email configuration command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_email_help()
+        return
+    
     if len(sys.argv) < 3:
         print("❌ error: missing required parameters")
         print("Usage: task email <action>")
         print("actions: enable, disable, show, test")
+        print("Use 'task email -h' to see detailed help")
         sys.exit(1)
     
     action = sys.argv[2]
@@ -396,6 +486,11 @@ def cmd_email(manager: TaskManager):
 
 def cmd_config(manager: TaskManager):
     """Configuration management command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_config_help()
+        return
+    
     if len(sys.argv) < 3:
         config_manager = ConfigManager(manager.data_dir)
         config_manager.show_help()
@@ -450,6 +545,218 @@ def cmd_config(manager: TaskManager):
         sys.exit(1)
 
 
+
+
+# Help functions for all commands
+def show_list_help():
+    """Show detailed help information for list command"""
+    print("Task Manager - List Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task list [options]")
+    print("")
+    print("Options:")
+    print("  --resources              Show system resource information")
+    print("  --status <status>        Filter tasks by status")
+    print("  <status>                 Filter by status (pending, running, completed, failed, killed)")
+    print("")
+    print("Examples:")
+    print("  task list")
+    print("  task list --resources")
+    print("  task list --status running")
+    print("  task list pending")
+    print("")
+    print("Status values:")
+    print("  pending    - Task is waiting to start")
+    print("  running    - Task is currently executing")
+    print("  completed  - Task finished successfully")
+    print("  failed     - Task failed with error")
+    print("  killed     - Task was stopped manually")
+
+
+def show_kill_help():
+    """Show detailed help information for kill command"""
+    print("Task Manager - Kill Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task kill <task_id> [--force] | task kill --all [--force]")
+    print("")
+    print("Parameters:")
+    print("  task_id    Task ID to stop (required)")
+    print("  --all      Stop all running tasks")
+    print("  --force    Force stop without graceful shutdown")
+    print("")
+    print("Examples:")
+    print("  task kill task_123")
+    print("  task kill task_123 --force")
+    print("  task kill --all")
+    print("  task kill --all --force")
+    print("")
+    print("Notes:")
+    print("  - Use --force only when normal stop fails")
+    print("  - --all option stops all running tasks")
+
+
+def show_monitor_help():
+    """Show detailed help information for monitor command"""
+    print("Task Manager - Monitor Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task monitor <task_id> [--lines N] [--refresh SECONDS]")
+    print("")
+    print("Parameters:")
+    print("  task_id           Task ID to monitor (required)")
+    print("  --lines N         Number of lines to show (default: 50)")
+    print("  --refresh SECONDS Refresh interval in seconds (default: 2.0)")
+    print("")
+    print("Examples:")
+    print("  task monitor task_123")
+    print("  task monitor task_123 --lines 100")
+    print("  task monitor task_123 --refresh 5")
+    print("  task monitor task_123 --lines 100 --refresh 1")
+    print("")
+    print("Notes:")
+    print("  - Press Ctrl+C to exit monitor")
+    print("  - Monitor shows real-time task output")
+    print("  - Screen refreshes automatically")
+
+
+def show_status_help():
+    """Show detailed help information for status command"""
+    print("Task Manager - Status Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task status <task_id>")
+    print("")
+    print("Parameters:")
+    print("  task_id    Task ID to check status (required)")
+    print("")
+    print("Examples:")
+    print("  task status task_123")
+    print("")
+    print("Output includes:")
+    print("  - Task name and ID")
+    print("  - Current status")
+    print("  - Start and end times")
+    print("  - Tmux session name")
+    print("  - Process ID (if running)")
+    print("  - Priority level")
+
+
+def show_output_help():
+    """Show detailed help information for output command"""
+    print("Task Manager - Output Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task output <task_id> [--lines N]")
+    print("")
+    print("Parameters:")
+    print("  task_id    Task ID to view output (required)")
+    print("  --lines N  Number of lines to show (default: 50)")
+    print("")
+    print("Examples:")
+    print("  task output task_123")
+    print("  task output task_123 --lines 100")
+    print("")
+    print("Notes:")
+    print("  - Shows the last N lines of task output")
+    print("  - Output is from tmux session")
+
+
+def show_cleanup_help():
+    """Show detailed help information for cleanup command"""
+    print("Task Manager - Cleanup Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task cleanup [max_age_hours]")
+    print("")
+    print("Parameters:")
+    print("  max_age_hours    Maximum age in hours for tasks to keep (default: 24)")
+    print("")
+    print("Examples:")
+    print("  task cleanup")
+    print("  task cleanup 48")
+    print("  task cleanup 168  # 1 week")
+    print("")
+    print("Notes:")
+    print("  - Removes old completed/failed tasks")
+    print("  - Keeps task logs and metadata")
+    print("  - Use higher values to keep tasks longer")
+
+
+def show_logs_help():
+    """Show detailed help information for logs command"""
+    print("Task Manager - Logs Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task logs <task_id> [lines]")
+    print("")
+    print("Parameters:")
+    print("  task_id    Task ID to view logs (required)")
+    print("  lines      Number of lines to show (default: 100)")
+    print("")
+    print("Examples:")
+    print("  task logs task_123")
+    print("  task logs task_123 200")
+    print("")
+    print("Notes:")
+    print("  - Shows task log file content")
+    print("  - Different from output command (shows log file vs tmux output)")
+
+
+def show_email_help():
+    """Show detailed help information for email command"""
+    print("Task Manager - Email Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task email <action>")
+    print("")
+    print("Actions:")
+    print("  enable     Enable email notifications")
+    print("  disable    Disable email notifications")
+    print("  show       Show current email configuration")
+    print("  test       Send test email")
+    print("")
+    print("Examples:")
+    print("  task email enable")
+    print("  task email disable")
+    print("  task email show")
+    print("  task email test")
+    print("")
+    print("Notes:")
+    print("  - Configure email settings using 'task config email'")
+    print("  - Test email to verify configuration")
+
+
+def show_config_help():
+    """Show detailed help information for config command"""
+    print("Task Manager - Config Command Help")
+    print("=" * 50)
+    print("")
+    print("Usage: task config <action> [options]")
+    print("")
+    print("Actions:")
+    print("  init                    Initialize configuration")
+    print("  email <config_file>     Import email configuration")
+    print("  token <token_file>      Import authentication token")
+    print("  google_api file <file>  Setup Google API with credentials file")
+    print("  google_api login        Login to Google API")
+    print("  show                    Show current configuration")
+    print("  test                    Test configuration")
+    print("")
+    print("Examples:")
+    print("  task config init")
+    print("  task config email email_config.json")
+    print("  task config token token.json")
+    print("  task config google_api file credentials.json")
+    print("  task config google_api login")
+    print("  task config show")
+    print("  task config test")
+    print("")
+    print("Notes:")
+    print("  - Initialize config before using other features")
+    print("  - Email config required for notifications")
+    print("  - Google API required for Gmail integration")
 
 
 if __name__ == "__main__":

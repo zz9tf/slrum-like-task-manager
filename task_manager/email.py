@@ -101,7 +101,7 @@ class EmailNotifier:
             if not creds or not creds.valid:
                 if creds and creds.expired and creds.refresh_token:
                     print("🔄 Refreshing expired token...")
-                    self._write_log("INFO Token expired; attempting refresh")
+                    self._write_log("INFO Token expired, attempting refresh")
                     creds.refresh(Request())
                     # Persist refreshed credentials
                     with open(token_file, 'w') as token:

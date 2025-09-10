@@ -16,7 +16,7 @@ def read_requirements():
 
 setup(
     name="lite-slurm",
-    version="1.0.0",
+    version="1.0.1",
     author="zheng",
     author_email="zheng.zheng.luck@gmail.com",
     description="A tmux-based task scheduling and monitoring tool",
