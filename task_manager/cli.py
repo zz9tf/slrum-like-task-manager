@@ -96,10 +96,10 @@ def show_help():
 
 def show_version():
     """Show version information"""
-    print("Task Manager v1.0.1")
+    print("Task Manager v1.0.2")
     print("A task scheduler and monitor based on tmux")
     print("Author: zheng")
-    print("Build date: 2025-09-09")
+    print("Build date: 2025-09-10")
 
 
 def cmd_run(manager: TaskManager):
