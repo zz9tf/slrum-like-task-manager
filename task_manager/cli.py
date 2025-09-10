@@ -96,7 +96,7 @@ def show_help():
 
 def show_version():
     """Show version information"""
-    print("Task Manager v1.0.2")
+    print("Task Manager v1.0.3")
     print("A task scheduler and monitor based on tmux")
     print("Author: zheng")
     print("Build date: 2025-09-10")
@@ -201,18 +201,20 @@ def cmd_list(manager: TaskManager):
     
     print("📋 all tasks:")
     task_list_formater = lambda task: f"{task['id']:<8} {task['name']:<20} {task['status']:<10} {task['priority']:<8} {task['duration']:<12} {task['tmux_session']:<20}"
-    print(task_list_formater("ID", "Name", "Status", "Priority", "Duration", "Tmux session"))
+    task = {
+        'id': 'ID',
+        'name': 'Name',
+        'status': 'Status',
+        'priority': 'Priority',
+        'duration': 'Duration',
+        'tmux_session': 'Tmux session'
+    }
+    print(task_list_formater(task))
     print("=" * 80)
     
     for task in tasks:
-        status_icons = {
-            'pending': '⏳',
-            'running': '🚀',
-            'completed': '✅',
-            'failed': '❌',
-            'killed': '🛑'
-        }
-        status_icon = status_icons.get(task['status'], '❓')
+        # Use text status instead of icons
+        status_text = task['status'].upper()
         
         # calculate duration
         duration = "N/A"
@@ -221,8 +223,9 @@ def cmd_list(manager: TaskManager):
                 duration = str(task['end_time'] - task['start_time']).split('.')[0]
             else:
                 duration = str(time.time() - task['start_time'].timestamp()).split('.')[0] + "s"
-        
-        print(task_list_formater(task['id'], task['name'], status_icon, task['status'], task['priority'], duration, task['tmux_session']))
+        task['duration'] = duration
+        task['status'] = status_text
+        print(task_list_formater(task))
     
     if show_resources:
         print("\n" + "=" * 80)
@@ -326,7 +329,7 @@ def cmd_monitor(manager: TaskManager):
             
     except KeyboardInterrupt:
         print(f"\n👋 stop monitor task: {task_id}")
-        sys.exit(0)
+        return
 
 
 def cmd_status(manager: TaskManager):

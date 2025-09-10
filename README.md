@@ -433,7 +433,7 @@ Created by zheng
 
 ## Changelog
 
-### v1.0.0 (2025-09-10)
+### v1.0.3 (2025-09-10)
 - Initial release
 - Basic task management functionality
 - tmux integration

@@ -78,7 +78,7 @@ class TaskManager:
                 tasks = {}
                 for task_id, task_data in data.items():
                     # Convert datetime strings back to datetime objects
-                    for time_field in ['created_time', 'start_time', 'end_time', 'pid']:
+                    for time_field in ['created_time', 'start_time', 'end_time']:
                         if task_data.get(time_field):
                             task_data[time_field] = datetime.fromisoformat(task_data[time_field])
                     tasks[task_id] = Task(**task_data)
@@ -94,7 +94,7 @@ class TaskManager:
             for task_id, task in self.tasks.items():
                 task_dict = asdict(task)
                 # Convert datetime objects to strings
-                for time_field in ['created_time', 'start_time', 'end_time', 'pid']:
+                for time_field in ['created_time', 'start_time', 'end_time']:
                     if task_dict.get(time_field):
                         task_dict[time_field] = task_dict[time_field].isoformat()
                 data[task_id] = task_dict
@@ -142,7 +142,7 @@ class TaskManager:
             return False
         
         try:
-            # Create tmux session
+            # Create tmux session with logging
             cmd = f"tmux new-session -d -s {task.tmux_session} '{task.command}'"
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
             
@@ -163,6 +163,9 @@ class TaskManager:
                     task.pid = int(pid_result.stdout.strip())
             except:
                 pass
+            
+            # Start real-time logging
+            self._start_task_logging(task_id)
             
             self._save_tasks()
             return True
@@ -264,16 +267,94 @@ class TaskManager:
                 output_lines = output.split('\n')
                 output = '\n'.join(output_lines[-lines:])
             
-            # Save to log file
-            self._save_task_log(task_id, output)
+            # Note: Real-time logging is handled by _start_task_logging
+            # No need to save here to avoid duplicate logs
             
             return output
             
         except Exception as e:
             return f"Error getting output: {e}"
     
+    def _start_task_logging(self, task_id: str):
+        """Start real-time logging for a task"""
+        try:
+            task = self.tasks[task_id]
+            log_file = self.logs_dir / f"{task_id}.log"
+            
+            # Create log file with initial info
+            with open(log_file, 'w', encoding='utf-8') as f:
+                f.write(f"[{datetime.now().isoformat()}] Task started: {task.name}\n")
+                f.write(f"[{datetime.now().isoformat()}] Command: {task.command}\n")
+                f.write(f"[{datetime.now().isoformat()}] Tmux session: {task.tmux_session}\n")
+                f.write("=" * 80 + "\n")
+            
+            # Start background logging process
+            import threading
+            log_thread = threading.Thread(
+                target=self._log_tmux_output,
+                args=(task_id,),
+                daemon=True
+            )
+            log_thread.start()
+            
+        except Exception as e:
+            print(f"⚠️ Failed to start logging: {e}")
+    
+    def _log_tmux_output(self, task_id: str):
+        """Background thread to log tmux output in real-time"""
+        try:
+            task = self.tasks[task_id]
+            log_file = self.logs_dir / f"{task_id}.log"
+            
+            # Use tmux pipe-pane to capture output in real-time
+            cmd = f"tmux pipe-pane -t {task.tmux_session} -o 'cat >> {log_file}'"
+            subprocess.run(cmd, shell=True, check=True)
+            
+        except Exception as e:
+            # If pipe-pane fails, fall back to periodic capture
+            self._log_tmux_output_fallback(task_id)
+    
+    def _log_tmux_output_fallback(self, task_id: str):
+        """Fallback method to log tmux output periodically"""
+        try:
+            task = self.tasks[task_id]
+            log_file = self.logs_dir / f"{task_id}.log"
+            last_output = ""
+            
+            while task.status == "running":
+                try:
+                    # Check if tmux session still exists
+                    result = subprocess.run(
+                        f"tmux has-session -t {task.tmux_session}",
+                        shell=True, capture_output=True
+                    )
+                    if result.returncode != 0:
+                        break
+                    
+                    # Capture current output
+                    cmd = f"tmux capture-pane -t {task.tmux_session} -p"
+                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                    
+                    if result.returncode == 0:
+                        current_output = result.stdout
+                        # Only log new content
+                        if current_output != last_output:
+                            new_content = current_output[len(last_output):]
+                            if new_content.strip():
+                                with open(log_file, 'a', encoding='utf-8') as f:
+                                    f.write(f"[{datetime.now().isoformat()}] {new_content}")
+                            last_output = current_output
+                    
+                    time.sleep(1)  # Check every second
+                    
+                except Exception:
+                    break
+                    
+        except Exception as e:
+            print(f"⚠️ Logging thread error: {e}")
+    
     def _save_task_log(self, task_id: str, output: str):
-        """Save task log to file"""
+        """Save task log to file (legacy method for compatibility)"""
         try:
             log_file = self.logs_dir / f"{task_id}.log"
             with open(log_file, 'a', encoding='utf-8') as f:
@@ -307,6 +388,24 @@ class TaskManager:
         """Send task completion email"""
         try:
             if task.status in ["completed", "failed", "killed"]:
-                self.email_notifier.send_task_completion_email(task)
+                # Calculate duration
+                duration = "N/A"
+                if task.start_time and task.end_time:
+                    duration = str(task.end_time - task.start_time).split('.')[0]
+                elif task.start_time:
+                    duration = str(datetime.now() - task.start_time).split('.')[0]
+                
+                # Format times
+                start_time = task.start_time.strftime('%Y-%m-%d %H:%M:%S') if task.start_time else 'N/A'
+                end_time = task.end_time.strftime('%Y-%m-%d %H:%M:%S') if task.end_time else 'N/A'
+                
+                self.email_notifier.send_task_completion_email(
+                    task.id, 
+                    task.status, 
+                    duration, 
+                    start_time, 
+                    end_time,
+                    task.command
+                )
         except Exception as e:
             print(f"⚠️ Failed to send email: {e}")
