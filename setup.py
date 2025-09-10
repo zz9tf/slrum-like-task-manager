@@ -22,11 +22,11 @@ setup(
     description="A tmux-based task scheduling and monitoring tool",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/zz9tf/slrum-like-task-manager",
+    url="https://github.com/zz9tf/slurm-like-task-manager",
     project_urls={
-        "Bug Reports": "https://github.com/zz9tf/slrum-like-task-manager/issues",
-        "Source": "https://github.com/zz9tf/slrum-like-task-manager",
-        "Documentation": "https://github.com/zz9tf/slrum-like-task-manager#readme",
+        "Bug Reports": "https://github.com/zz9tf/slurm-like-task-manager/issues",
+        "Source": "https://github.com/zz9tf/slurm-like-task-manager",
+        "Documentation": "https://github.com/zz9tf/slurm-like-task-manager#readme",
     },
     packages=find_packages(),
     classifiers=[

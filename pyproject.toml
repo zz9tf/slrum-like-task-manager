@@ -43,10 +43,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/zz9tf/slrum-like-task-manager"
-"Bug Reports" = "https://github.com/zz9tf/slrum-like-task-manager/issues"
-Source = "https://github.com/zz9tf/slrum-like-task-manager"
-Documentation = "https://github.com/zz9tf/slrum-like-task-manager#readme"
+Homepage = "https://github.com/zz9tf/slurm-like-task-manager"
+"Bug Reports" = "https://github.com/zz9tf/slurm-like-task-manager/issues"
+Source = "https://github.com/zz9tf/slurm-like-task-manager"
+Documentation = "https://github.com/zz9tf/slurm-like-task-manager#readme"
 
 [project.scripts]
 task = "task_manager.cli:main"
