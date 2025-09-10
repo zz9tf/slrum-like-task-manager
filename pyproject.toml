@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "task-manager"
+version = "1.0.0"
+authors = [
+    {name = "zheng", email = "zheng.zheng.luck@gmail.com"},
+]
+description = "A tmux-based task scheduling and monitoring tool"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "psutil>=5.8.0",
+    "google-auth>=2.0.0",
+    "google-auth-oauthlib>=0.5.0",
+    "google-auth-httplib2>=0.1.0",
+    "google-api-python-client>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0",
+    "black>=21.0",
+    "flake8>=3.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/zz9tf/slrum-like-task-manager"
+"Bug Reports" = "https://github.com/zz9tf/slrum-like-task-manager/issues"
+Source = "https://github.com/zz9tf/slrum-like-task-manager"
+Documentation = "https://github.com/zz9tf/slrum-like-task-manager#readme"
+
+[project.scripts]
+task = "task_manager.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["task_manager*"]
+
+[tool.setuptools.package-data]
+task_manager = ["config/*.json", "templates/*.html"]
