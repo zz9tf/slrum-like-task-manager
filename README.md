@@ -59,6 +59,21 @@ pip install .
 task config init
 ```
 
+### 卸载
+
+```bash
+# 运行卸载脚本
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+**卸载脚本功能**:
+- 停止所有运行中的任务
+- 卸载Python包
+- 可选删除配置文件
+- 清理可执行文件
+- 提供手动清理指导
+
 ## 使用方法
 
 ### 基本命令

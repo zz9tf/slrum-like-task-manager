@@ -223,3 +223,11 @@ logs/
 # 临时文件
 *.tmp
 *.temp
+
+# Python包构建文件
+*.egg-info/
+build/
+dist/
+
+# tmux日志文件
+tmux-client-*.log
