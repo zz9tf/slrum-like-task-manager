@@ -176,9 +176,11 @@ class TaskManager:
                 # For normal: just redirect stderr to stdout
                 inner = f"{task.command} 2>&1"
             
-            # Add email notification and exit
+            # Add email notification and ensure tmux session is terminated after task ends
             email_cmd = f"python -m task_manager.cli _send_email {task_id}"
-            full_cmd = f"({inner}); {email_cmd}; exit"
+            # After command finishes and email is sent, proactively kill the tmux session to prevent orphaned sessions
+            kill_tmux_cmd = f"tmux kill-session -t {task.tmux_session}"
+            full_cmd = f"({inner}); {email_cmd}; {kill_tmux_cmd}"
             
             # Encode command as base64 to avoid quoting issues
             encoded_cmd = base64.b64encode(full_cmd.encode()).decode()
