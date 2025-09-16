@@ -64,6 +64,9 @@ class TaskManager:
         
         # Task ID counter
         self.next_task_id = self._get_next_task_id()
+
+        # Ensure debug log is bounded in size
+        self._truncate_debug_log()
     
     def _load_tasks(self) -> Dict[str, Task]:
         """Load tasks from file"""
@@ -109,6 +112,28 @@ class TaskManager:
         
         max_id = max(int(task_id) for task_id in self.tasks.keys())
         return max_id + 1
+
+    def _truncate_debug_log(self, max_lines: int = 10000) -> None:
+        """Ensure ~/.task_manager/debug.log keeps at most the last max_lines lines.
+
+        This method is safe to call frequently and will no-op if the file does not exist
+        or already within the limit.
+        """
+        try:
+            debug_log_path = Path.home() / ".task_manager" / "debug.log"
+            if not debug_log_path.exists():
+                return
+            with open(debug_log_path, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+            if len(lines) <= max_lines:
+                return
+            # Keep only the last max_lines
+            tail = lines[-max_lines:]
+            with open(debug_log_path, 'w', encoding='utf-8') as f:
+                f.writelines(tail)
+        except Exception:
+            # Never fail the main flow due to log maintenance issues
+            pass
     
     @staticmethod
     def _escape_single_quotes(text: str) -> str:
@@ -117,7 +142,30 @@ class TaskManager:
     
     def create_task(self, name: str, command: str, priority: int = 0, max_retries: int = 0) -> Optional[str]:
         """Create new task"""
-        task_id = f"{self.next_task_id:05d}"
+        # Find the next available task id that has no existing logs and not used in tasks
+        while True:
+            candidate = f"{self.next_task_id:05d}"
+            # Skip if candidate already in tasks
+            if candidate in self.tasks:
+                self.next_task_id += 1
+                continue
+            # Skip if any log files with this id prefix still exist (e.g., 00041.log, 00041.*)
+            has_logs = False
+            try:
+                for path in self.logs_dir.glob(f"{candidate}*"):
+                    if path.is_file():
+                        has_logs = True
+                        break
+            except Exception:
+                # If we cannot check, be conservative and skip the id
+                has_logs = True
+            if has_logs:
+                self.next_task_id += 1
+                continue
+            # Found usable id
+            task_id = candidate
+            self.next_task_id += 1
+            break
         tmux_session = f"task_{task_id}"
         
         task = Task(
@@ -145,6 +193,8 @@ class TaskManager:
             return False
         
         try:
+            # Keep debug.log within bounds before starting a new task
+            self._truncate_debug_log()
             # 1. Create tmux session
             create_cmd = f"tmux new-session -d -s {task.tmux_session}"
             result = subprocess.run(create_cmd, shell=True, capture_output=True, text=True)
@@ -187,6 +237,8 @@ class TaskManager:
             wrapped = f"echo {encoded_cmd} | base64 -d | bash"
             send_cmd = f'tmux send-keys -t {task.tmux_session}:0 "{wrapped}" C-m'
             subprocess.run(send_cmd, shell=True, capture_output=True, text=True)
+            # Also attempt to bound debug log after initiating the task
+            self._truncate_debug_log()
             
             # 5. Update task status
             task.status = "running"
@@ -326,16 +378,14 @@ class TaskManager:
                 if age_hours > max_age_hours:
                     tasks_to_remove.append(task_id)
         
-        # Remove tasks and their log files
+        # Remove tasks using unified cleanup, which also removes terminal logs and kills tmux
+        removed_count = 0
         for task_id in tasks_to_remove:
-            del self.tasks[task_id]
-            log_file = self.logs_dir / f"{task_id}.log"
-            if log_file.exists():
-                log_file.unlink()
+            if self.cleanup_task(task_id):
+                removed_count += 1
         
-        if tasks_to_remove:
-            print(f"🧹 Cleaned up {len(tasks_to_remove)} old tasks")
-            self._save_tasks()
+        if removed_count:
+            print(f"🧹 Cleaned up {removed_count} old tasks")
     
     def cleanup_task(self, task_id: str) -> bool:
         """Clean up a specific task"""
@@ -343,15 +393,26 @@ class TaskManager:
             return False
         
         try:
-            # Remove task from memory
+            task = self.tasks[task_id]
+            # Best-effort: kill lingering tmux session for the task
+            try:
+                subprocess.run(f"tmux kill-session -t {task.tmux_session}", shell=True, capture_output=True)
+            except Exception:
+                pass
+            
+            # Remove terminal log files associated with the task (e.g., 00023.log, 00023.*)
+            try:
+                for path in self.logs_dir.glob(f"{task_id}*"):
+                    try:
+                        if path.is_file():
+                            path.unlink()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            
+            # Remove task from memory and persist
             del self.tasks[task_id]
-            
-            # Remove log file
-            log_file = self.logs_dir / f"{task_id}.log"
-            if log_file.exists():
-                log_file.unlink()
-            
-            # Save updated task list
             self._save_tasks()
             return True
             
