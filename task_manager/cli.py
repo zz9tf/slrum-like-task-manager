@@ -7,6 +7,7 @@ Command line interface module
 import sys
 import os
 import time
+from datetime import datetime, timedelta
 
 from .core import TaskManager
 from .config import ConfigManager
@@ -52,6 +53,10 @@ def main():
         cmd_email(manager)
     elif command == "config":
         cmd_config(manager)
+    elif command == "resources":
+        cmd_resources(manager)
+    elif command == "_send_email":
+        cmd_send_email(manager)
     else:
         print(f"❌ unknown command: {command}")
         print("use 'task -h' to see help information")
@@ -79,11 +84,12 @@ def show_help():
     print("  logs     view task logs")
     print("  email    email configuration")
     print("  config   configuration management")
+    print("  resources show system resources")
     print("")
     print("Examples:")
     print("  task run 'train model' 'python train.py --epochs 100'")
     print("  task list")
-    print("  task list --resources")
+    print("  task resources")
     print("  task monitor <task_id>")
     print("  task kill <task_id>")
     print("  task status <task_id>")
@@ -120,16 +126,36 @@ def cmd_run(manager: TaskManager):
         print("Use 'task run -h' to see detailed help")
         sys.exit(1)
     
-    name = sys.argv[2]
-    command = sys.argv[3]
-    priority = int(sys.argv[4]) if len(sys.argv) > 4 else 0
+    # parse options
+    realtime = False
+    args = sys.argv[2:]
+    # name and command are the first two non-option args
+    parsed = []
+    i = 0
+    while i < len(args):
+        if args[i] in ['-r', '--realtime']:
+            realtime = True
+            i += 1
+        else:
+            parsed.append(args[i])
+            i += 1
+    if len(parsed) < 2:
+        print("❌ error: missing required parameters")
+        print("Usage: task run <name> <command> [priority] [max_retries] [-r|--realtime]")
+        sys.exit(1)
+    name = parsed[0]
+    command = parsed[1]
+    # still support optional priority as third positional (after options)
+    priority = 0
+    if len(parsed) >= 3 and parsed[2].lstrip('-').isdigit():
+        priority = int(parsed[2])
     # max_retries = int(sys.argv[5]) if len(sys.argv) > 5 else 0
     
     # task_id = manager.create_task(name, command, priority, max_retries)
     task_id = manager.create_task(name, command, priority)
     print(f"✅ task created successfully: {task_id} - {name}")
     
-    if manager.start_task(task_id):
+    if manager.start_task(task_id, realtime=realtime):
         print(f"🚀 task started successfully: {task_id}")
         print(f"📺 view output: task output {task_id}")
         print(f"🛑 stop task: task kill {task_id}")
@@ -144,7 +170,7 @@ def show_run_help():
     print("Task Manager - Run Command Help")
     print("=" * 50)
     print("")
-    print("Usage: task run <name> <command> [priority] [max_retries]")
+    print("Usage: task run <name> <command> [priority] [max_retries] [-r|--realtime]")
     print("")
     print("Parameters:")
     print("  name         Task name (required) - Unique identifier for the task")
@@ -155,6 +181,7 @@ def show_run_help():
     print("Examples:")
     print("  task run 'train model' 'python train.py --epochs 100'")
     print("  task run 'data processing' 'python process_data.py' 5")
+    print("  task run -r 'stream logs' 'python long.py' 0")
     print("  task run 'backup' 'tar -czf backup.tar.gz /home/user' 0 3")
     print("")
     print("Notes:")
@@ -193,14 +220,16 @@ def cmd_list(manager: TaskManager):
             status_filter = arg
         i += 1
     
+    # First check and update all task statuses
+    for task_id in list(manager.tasks.keys()):
+        manager.get_task_status(task_id)
+    
     tasks = manager.list_tasks(status_filter)
     
     if not tasks:
         print("📋 no tasks found")
         return
-    
-    print("📋 all tasks:")
-    task_list_formater = lambda task: f"{task['id']:<8} {task['name']:<20} {task['status']:<10} {task['priority']:<8} {task['duration']:<12} {task['tmux_session']:<20}"
+    task_list_formater = lambda task: f"{task['id']:<8} {task['name']:<30} {task['status']:<10} {task['priority']:<8} {task['duration']:<16} {task['tmux_session']:<20}"
     task = {
         'id': 'ID',
         'name': 'Name',
@@ -210,21 +239,41 @@ def cmd_list(manager: TaskManager):
         'tmux_session': 'Tmux session'
     }
     print(task_list_formater(task))
-    print("=" * 80)
+    print("=" * 94)
     
     for task in tasks:
         # Use text status instead of icons
         status_text = task['status'].upper()
         
-        # calculate duration
+        # Truncate name if too long (max 27 chars + "...")
+        display_name = task['name']
+        if len(display_name) > 27:
+            display_name = display_name[:24] + "..."
+        
+        # Calculate duration in Days, HH:MM:SS format
         duration = "N/A"
         if task['start_time']:
             if task['end_time']:
-                duration = str(task['end_time'] - task['start_time']).split('.')[0]
+                delta = task['end_time'] - task['start_time']
             else:
-                duration = str(time.time() - task['start_time'].timestamp()).split('.')[0] + "s"
+                delta = time.time() - task['start_time'].timestamp()
+                delta = timedelta(seconds=delta)
+            
+            # Convert to Days, HH:MM:SS format
+            total_seconds = int(delta.total_seconds())
+            days = total_seconds // 86400
+            hours = (total_seconds % 86400) // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            
+            if days > 0:
+                duration = f"{days}d {hours:02d}:{minutes:02d}:{seconds:02d}"
+            else:
+                duration = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        
         task['duration'] = duration
         task['status'] = status_text
+        task['name'] = display_name
         print(task_list_formater(task))
     
     if show_resources:
@@ -401,16 +450,50 @@ def cmd_cleanup(manager: TaskManager):
         show_cleanup_help()
         return
     
+    # Parse arguments
+    task_ids = []
     max_age_hours = 24
-    if len(sys.argv) > 2:
-        try:
-            max_age_hours = int(sys.argv[2])
-        except ValueError:
-            print("❌ error: invalid time parameter")
+    
+    i = 2
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        if arg in ['-t', '--time'] and i + 1 < len(sys.argv):
+            try:
+                max_age_hours = int(sys.argv[i + 1])
+                i += 2
+            except ValueError:
+                print(f"❌ error: invalid time value '{sys.argv[i + 1]}'")
+                print("Use 'task cleanup -h' to see detailed help")
+                sys.exit(1)
+        elif arg.startswith('0') and len(arg) >= 3:
+            # Task ID format: starts with 0 and at least 3 digits
+            task_ids.append(arg)
+            i += 1
+        elif arg.isdigit():
+            # Pure number: treat as task ID (legacy support)
+            task_ids.append(arg)
+            i += 1
+        else:
+            print(f"❌ error: unknown parameter '{arg}'")
             print("Use 'task cleanup -h' to see detailed help")
             sys.exit(1)
     
-    print(f"🧹 start cleanup task (tasks older than {max_age_hours} hours)")
+    # Cleanup specific tasks
+    if task_ids:
+        success_count = 0
+        for task_id in task_ids:
+            print(f"🧹 cleaning up task: {task_id}")
+            if manager.cleanup_task(task_id):
+                print(f"✅ task {task_id} cleaned up successfully")
+                success_count += 1
+            else:
+                print(f"❌ task {task_id} not found or cleanup failed")
+        
+        print(f"📊 cleanup summary: {success_count}/{len(task_ids)} tasks cleaned up")
+        return
+    
+    # Cleanup old tasks
+    print(f"🧹 start cleanup tasks (tasks older than {max_age_hours} hours)")
     manager.cleanup_old_tasks(max_age_hours)
     print("✅ cleanup completed")
 
@@ -671,20 +754,25 @@ def show_cleanup_help():
     print("Task Manager - Cleanup Command Help")
     print("=" * 50)
     print("")
-    print("Usage: task cleanup [max_age_hours]")
+    print("Usage: task cleanup [-t/--time hours] [task_id1] [task_id2] ...")
     print("")
     print("Parameters:")
-    print("  max_age_hours    Maximum age in hours for tasks to keep (default: 24)")
+    print("  -t, --time hours  Clean up tasks older than specified hours (default: 24)")
+    print("  task_id          Clean up specific task(s) by ID")
     print("")
     print("Examples:")
-    print("  task cleanup")
-    print("  task cleanup 48")
-    print("  task cleanup 168  # 1 week")
+    print("  task cleanup                           # Clean up tasks older than 24 hours")
+    print("  task cleanup -t 48                     # Clean up tasks older than 48 hours")
+    print("  task cleanup --time 168                # Clean up tasks older than 1 week")
+    print("  task cleanup 00023                     # Clean up specific task 00023")
+    print("  task cleanup 00023 00024 00025         # Clean up multiple tasks")
+    print("  task cleanup -t 48 00023 00024         # Clean up tasks 00023,00024 (time ignored)")
     print("")
     print("Notes:")
-    print("  - Removes old completed/failed tasks")
-    print("  - Keeps task logs and metadata")
-    print("  - Use higher values to keep tasks longer")
+    print("  - Specify task IDs to clean up specific tasks")
+    print("  - Use -t/--time for bulk cleanup by age")
+    print("  - Multiple task IDs can be specified")
+    print("  - Removes task logs and metadata")
 
 
 def show_logs_help():
@@ -760,6 +848,59 @@ def show_config_help():
     print("  - Initialize config before using other features")
     print("  - Email config required for notifications")
     print("  - Google API required for Gmail integration")
+
+
+def cmd_resources(manager: TaskManager):
+    """Show system resources command"""
+    # Check help option
+    if len(sys.argv) > 2 and sys.argv[2] in ['-h', '--help']:
+        show_resources_help()
+        return
+    try:
+        resources = manager.resource_monitor.get_system_resources()
+        print(manager.resource_monitor.format_resources(resources))
+    except Exception as e:
+        print(f"❌ failed to get system resources: {e}")
+
+
+def show_resources_help():
+    """Show resources help information"""
+    print("Resources Command Help")
+    print("=" * 30)
+    print("")
+    print("Usage:")
+    print("  task resources")
+    print("")
+    print("Description:")
+    print("  Show current system resource usage including:")
+    print("  - CPU usage percentage")
+    print("  - Memory usage and available")
+    print("  - Disk usage")
+    print("  - Running processes count")
+    print("")
+    print("Examples:")
+    print("  task resources")
+    print("")
+
+
+def cmd_send_email(manager: TaskManager):
+    """Internal command to send completion email for a task"""
+    if len(sys.argv) < 3:
+        return
+    
+    task_id = sys.argv[2]
+    if task_id not in manager.tasks:
+        return
+    
+    task = manager.tasks[task_id]
+    
+    # Update task completion status
+    task.status = "completed"
+    task.end_time = datetime.now()
+    manager._save_tasks()
+    
+    # Send completion email
+    manager._send_completion_email(task)
 
 
 if __name__ == "__main__":

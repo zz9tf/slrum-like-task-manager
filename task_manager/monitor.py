@@ -101,7 +101,7 @@ class ResourceMonitor:
         
         output = []
         output.append("🖥️  System Resources:")
-        output.append("=" * 50)
+        output.append("=" * 60)
         
         # CPU
         cpu = resources.get('cpu', {})
